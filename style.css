@@ -943,6 +943,55 @@ p {
     border: 2px solid var(--main-color);
     margin: 1.5rem 0;
     resize: none;
+    transition: 0.3s ease;
+}
+
+.contact form .input-box input:focus,
+.contact form textarea:focus{
+    border-color: #00ffee;
+    box-shadow: 0 0 15px rgba(0, 255, 238, 0.3);
+}
+
+.contact form .input-box input.error,
+.contact form textarea.error{
+    border-color: #ff4444;
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.contact form .input-box input:valid:not(:placeholder-shown),
+.contact form textarea:valid:not(:placeholder-shown){
+    border-color: #44ff44;
+    box-shadow: 0 0 15px rgba(68, 255, 68, 0.3);
+}
+
+.form-message{
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    font-size: 1.6rem;
+    text-align: center;
+    display: none;
+}
+
+.form-message.success{
+    background-color: rgba(68, 255, 68, 0.2);
+    border: 2px solid #44ff44;
+    color: #44ff44;
+    display: block;
+}
+
+.form-message.error{
+    background-color: rgba(255, 68, 68, 0.2);
+    border: 2px solid #ff4444;
+    color: #ff4444;
+    display: block;
 }
 
 .contact form .btn{

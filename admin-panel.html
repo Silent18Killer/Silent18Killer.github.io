@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form Submissions - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #080808;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00ffee;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #131313;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00ffee;
+            text-align: center;
+            min-width: 200px;
+            margin: 10px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            color: #00ffee;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: #ccc;
+            margin-top: 5px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            background: #00ffee;
+            color: #080808;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #00ccbb;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #cc3333;
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #131313;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .submissions-table th,
+        .submissions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .submissions-table th {
+            background: #00ffee;
+            color: #080808;
+            font-weight: bold;
+        }
+
+        .submissions-table tr:hover {
+            background: #1a1a1a;
+        }
+
+        .message-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .message-cell:hover {
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .no-submissions {
+            text-align: center;
+            padding: 50px;
+            color: #ccc;
+            font-size: 1.2rem;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .export-btn {
+            background: #44ff44;
+            color: #080808;
+            margin: 5px;
+        }
+
+        .export-btn:hover {
+            background: #33cc33;
+        }
+
+        @media (max-width: 768px) {
+            .submissions-table {
+                font-size: 0.8rem;
+            }
+            
+            .submissions-table th,
+            .submissions-table td {
+                padding: 8px 4px;
+            }
+            
+            .stat-card {
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Contact Form Submissions</h1>
+        
+        <div class="stats" id="stats">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+            <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
+            <button class="btn export-btn" onclick="exportToJSON()">📄 Export to JSON</button>
+        </div>
+
+        <div id="submissionsContainer">
+            <!-- Submissions table will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        let submissions = [];
+
+        function loadSubmissions() {
+            submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+            updateStats();
+            displaySubmissions();
+        }
+
+        function updateStats() {
+            const statsContainer = document.getElementById('stats');
+            const totalSubmissions = submissions.length;
+            const todaySubmissions = submissions.filter(sub => {
+                const today = new Date().toDateString();
+                const submissionDate = new Date(sub.timestamp).toDateString();
+                return today === submissionDate;
+            }).length;
+
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalSubmissions}</div>
+                    <div class="stat-label">Total Submissions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${todaySubmissions}</div>
+                    <div class="stat-label">Today's Submissions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${submissions.length > 0 ? new Date(submissions[submissions.length - 1].timestamp).toLocaleDateString() : 'N/A'}</div>
+                    <div class="stat-label">Latest Submission</div>
+                </div>
+            `;
+        }
+
+        function displaySubmissions() {
+            const container = document.getElementById('submissionsContainer');
+            
+            if (submissions.length === 0) {
+                container.innerHTML = '<div class="no-submissions">No submissions found. Try submitting the contact form first!</div>';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Subject</th>
+                            <th>Message</th>
+                            <th>Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            submissions.forEach((submission, index) => {
+                const date = new Date(submission.timestamp).toLocaleString();
+                tableHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${submission.fullName}</td>
+                        <td>${submission.email}</td>
+                        <td>${submission.phone}</td>
+                        <td>${submission.subject || 'N/A'}</td>
+                        <td class="message-cell" title="${submission.message}">${submission.message}</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function refreshData() {
+            loadSubmissions();
+            alert('Data refreshed!');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete ALL submissions? This cannot be undone!')) {
+                localStorage.removeItem('contactSubmissions');
+                submissions = [];
+                updateStats();
+                displaySubmissions();
+                alert('All data cleared!');
+            }
+        }
+
+        function exportToCSV() {
+            if (submissions.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const headers = ['Name', 'Email', 'Phone', 'Subject', 'Message', 'Date'];
+            const csvContent = [
+                headers.join(','),
+                ...submissions.map(sub => [
+                    `"${sub.fullName}"`,
+                    `"${sub.email}"`,
+                    `"${sub.phone}"`,
+                    `"${sub.subject || ''}"`,
+                    `"${sub.message.replace(/"/g, '""')}"`,
+                    `"${new Date(sub.timestamp).toLocaleString()}"`
+                ].join(','))
+            ].join('\n');
+
+            downloadFile(csvContent, 'contact_submissions.csv', 'text/csv');
+        }
+
+        function exportToJSON() {
+            if (submissions.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const jsonContent = JSON.stringify(submissions, null, 2);
+            downloadFile(jsonContent, 'contact_submissions.json', 'application/json');
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadSubmissions);
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadSubmissions, 30000);
+    </script>
+</body>
+</html> 
