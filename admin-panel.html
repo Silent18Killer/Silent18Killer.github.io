@@ -23,6 +23,79 @@
             margin: 0 auto;
         }
 
+        /* Login Screen Styles */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #080808;
+        }
+
+        .login-container {
+            background: #131313;
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #00ffee;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-container h1 {
+            color: #00ffee;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .login-form input {
+            padding: 12px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background: #1a1a1a;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #00ffee;
+        }
+
+        .login-btn {
+            background: #00ffee;
+            color: #080808;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #00ccbb;
+            transform: scale(1.02);
+        }
+
+        .error-message {
+            color: #ff4444;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Main Admin Panel Styles */
+        .admin-panel {
+            display: none;
+        }
+
         h1 {
             color: #00ffee;
             text-align: center;
@@ -165,27 +238,94 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📧 Contact Form Submissions</h1>
-        
-        <div class="stats" id="stats">
-            <!-- Stats will be populated by JavaScript -->
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container">
+            <h1>🔐 Admin Access</h1>
+            <form class="login-form" id="loginForm">
+                <input type="password" id="password" placeholder="Enter Admin Password" required>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <div class="error-message" id="errorMessage">Incorrect password. Please try again.</div>
         </div>
+    </div>
 
-        <div class="controls">
-            <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
-            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
-            <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
-            <button class="btn export-btn" onclick="exportToJSON()">📄 Export to JSON</button>
-        </div>
+    <!-- Admin Panel Content -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="container">
+            <h1>📧 Contact Form Submissions</h1>
+            
+            <div class="stats" id="stats">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
 
-        <div id="submissionsContainer">
-            <!-- Submissions table will be populated by JavaScript -->
+            <div class="controls">
+                <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
+                <button class="btn export-btn" onclick="exportToJSON()">📄 Export to JSON</button>
+                <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+            </div>
+
+            <div id="submissionsContainer">
+                <!-- Submissions table will be populated by JavaScript -->
+            </div>
         </div>
     </div>
 
     <script>
+        // Admin password - CHANGE THIS TO YOUR OWN PASSWORD
+        const ADMIN_PASSWORD = "admin123"; // Change this to your desired password
+        
         let submissions = [];
+        let isAuthenticated = false;
+
+        // Check if already authenticated
+        function checkAuth() {
+            const authStatus = sessionStorage.getItem('adminAuthenticated');
+            if (authStatus === 'true') {
+                isAuthenticated = true;
+                showAdminPanel();
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        // Show login screen
+        function showLoginScreen() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        // Show admin panel
+        function showAdminPanel() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadSubmissions();
+        }
+
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                sessionStorage.setItem('adminAuthenticated', 'true');
+                showAdminPanel();
+                document.getElementById('errorMessage').style.display = 'none';
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // Logout function
+        function logout() {
+            isAuthenticated = false;
+            sessionStorage.removeItem('adminAuthenticated');
+            showLoginScreen();
+        }
 
         function loadSubmissions() {
             submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
@@ -197,27 +337,9 @@
             const statsContainer = document.getElementById('stats');
             const totalSubmissions = submissions.length;
             const today = new Date().toDateString();
-
-            const todaySubmissions = submissions.filter(sub => {
-                const submissionDate = new Date(sub.timestamp).toDateString();
-                return today === submissionDate;
-            }).length;
-
-            const previousSubmissions = submissions.filter(sub => {
-                const submissionDate = new Date(sub.timestamp).toDateString();
-                return today !== submissionDate;
-            });
-
-            const previousSubmissionsCount = previousSubmissions.length;
-
-            // Find the latest previous submission date
-            let previousSubmissionDate = 'N/A';
-            if (previousSubmissionsCount > 0) {
-                const latestPrev = previousSubmissions.reduce((latest, sub) => {
-                    return (!latest || new Date(sub.timestamp) > new Date(latest.timestamp)) ? sub : latest;
-                }, null);
-                previousSubmissionDate = new Date(latestPrev.timestamp).toLocaleDateString();
-            }
+            const todaySubmissions = submissions.filter(sub => 
+                new Date(sub.timestamp).toDateString() === today
+            ).length;
 
             statsContainer.innerHTML = `
                 <div class="stat-card">
@@ -229,16 +351,8 @@
                     <div class="stat-label">Today's Submissions</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${previousSubmissionsCount}</div>
-                    <div class="stat-label">Previous Submissions</div>
-                </div>
-                <div class="stat-card">
                     <div class="stat-number">${submissions.length > 0 ? new Date(submissions[submissions.length - 1].timestamp).toLocaleDateString() : 'N/A'}</div>
                     <div class="stat-label">Latest Submission</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${previousSubmissionDate}</div>
-                    <div class="stat-label">Previous Submission Date</div>
                 </div>
             `;
         }
@@ -247,7 +361,7 @@
             const container = document.getElementById('submissionsContainer');
             
             if (submissions.length === 0) {
-                container.innerHTML = '<div class="no-submissions">No submissions found. Try submitting the contact form first!</div>';
+                container.innerHTML = '<div class="no-submissions">No submissions yet. Check back later!</div>';
                 return;
             }
 
@@ -255,13 +369,13 @@
                 <table class="submissions-table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>Date & Time</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Subject</th>
                             <th>Message</th>
-                            <th>Date & Time</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -271,34 +385,47 @@
                 const date = new Date(submission.timestamp).toLocaleString();
                 tableHTML += `
                     <tr>
-                        <td>${index + 1}</td>
+                        <td>${date}</td>
                         <td>${submission.fullName}</td>
                         <td>${submission.email}</td>
                         <td>${submission.phone}</td>
-                        <td>${submission.subject || 'N/A'}</td>
+                        <td>${submission.subject}</td>
                         <td class="message-cell" title="${submission.message}">${submission.message}</td>
-                        <td>${date}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteSubmission(${index})">Delete</button>
+                        </td>
                     </tr>
                 `;
             });
 
-            tableHTML += '</tbody></table>';
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
             container.innerHTML = tableHTML;
+        }
+
+        function deleteSubmission(index) {
+            if (confirm('Are you sure you want to delete this submission?')) {
+                submissions.splice(index, 1);
+                localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
+                updateStats();
+                displaySubmissions();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL submissions? This action cannot be undone.')) {
+                submissions = [];
+                localStorage.removeItem('contactSubmissions');
+                updateStats();
+                displaySubmissions();
+            }
         }
 
         function refreshData() {
             loadSubmissions();
-            alert('Data refreshed!');
-        }
-
-        function clearAllData() {
-            if (confirm('Are you sure you want to delete ALL submissions? This cannot be undone!')) {
-                localStorage.removeItem('contactSubmissions');
-                submissions = [];
-                updateStats();
-                displaySubmissions();
-                alert('All data cleared!');
-            }
         }
 
         function exportToCSV() {
@@ -307,16 +434,16 @@
                 return;
             }
 
-            const headers = ['Name', 'Email', 'Phone', 'Subject', 'Message', 'Date'];
+            const headers = ['Date', 'Name', 'Email', 'Phone', 'Subject', 'Message'];
             const csvContent = [
                 headers.join(','),
                 ...submissions.map(sub => [
+                    new Date(sub.timestamp).toLocaleString(),
                     `"${sub.fullName}"`,
-                    `"${sub.email}"`,
-                    `"${sub.phone}"`,
-                    `"${sub.subject || ''}"`,
-                    `"${sub.message.replace(/"/g, '""')}"`,
-                    `"${new Date(sub.timestamp).toLocaleString()}"`
+                    sub.email,
+                    sub.phone,
+                    `"${sub.subject}"`,
+                    `"${sub.message.replace(/"/g, '""')}"`
                 ].join(','))
             ].join('\n');
 
@@ -345,11 +472,8 @@
             URL.revokeObjectURL(url);
         }
 
-        // Load data when page loads
-        document.addEventListener('DOMContentLoaded', loadSubmissions);
-
-        // Auto-refresh every 30 seconds
-        setInterval(loadSubmissions, 30000);
+        // Initialize on page load
+        checkAuth();
     </script>
 </body>
 </html> 
