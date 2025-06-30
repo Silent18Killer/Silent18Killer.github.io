@@ -27,16 +27,19 @@ window.onscroll = () => {
     navbar.classList.remove('active');
 };
 
+// Consolidated DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function () {
+    // Menu functionality
     const menuIcon = document.getElementById('menu-icon');
     const navLinks = document.getElementById('nav-links');
 
-    menuIcon.addEventListener('click', function () {
-        navLinks.classList.toggle('show');
-    });
-});
+    if (menuIcon && navLinks) {
+        menuIcon.addEventListener('click', function () {
+            navLinks.classList.toggle('show');
+        });
+    }
 
-document.addEventListener("DOMContentLoaded", function() {
+    // Read more buttons functionality
     const readMoreButtons = document.querySelectorAll(".read-more-btn");
 
     readMoreButtons.forEach(button => {
@@ -51,38 +54,13 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     });
-});
 
-
-// circle skill
-
-const circles = document.querySelectorAll('.circle');
-circles.forEach(elem=>{
-    var dots = elem.getAttribute("data-dots");
-    var marked = elem.getAttribute("data-percent");
-    var percent = Math.floor(dots*marked/100);
-    var points = "";
-    var rotate = 360/dots;
-
-    for(let i=0; i<dots; i++)
-    {
-        points += `<div class="points" style="--i:${i}; --rot:${rotate}deg"></div>`;
-    }
-    elem.innerHTML = points;
-
-    const pointsMarked = elem.querySelectorAll('.points');
-    for(let i=0; i<percent; i++)
-    {
-        pointsMarked[i].classList.add('marked')
-    }
-})
-
-// Contact Form Handling
-document.addEventListener('DOMContentLoaded', function() {
+    // Contact Form Handling
     const contactForm = document.getElementById('contactForm');
     const formMessage = document.getElementById('formMessage');
 
-    if (contactForm) {
+    // Only proceed if the contact form exists
+    if (contactForm && formMessage) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -131,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 userAgent: navigator.userAgent
             };
 
-            // Store submission data (for demo purposes - in real implementation, send to server)
+            // Store submission data
             storeSubmission(submissionData);
 
             // Show success message
@@ -190,29 +168,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showMessage(message, type) {
-        formMessage.textContent = message;
-        formMessage.className = `form-message ${type}`;
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                formMessage.style.display = 'none';
-            }, 5000);
+        if (formMessage) {
+            formMessage.textContent = message;
+            formMessage.className = `form-message ${type}`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    formMessage.style.display = 'none';
+                }, 5000);
+            }
+        } else {
+            // Fallback: show alert if formMessage element doesn't exist
+            alert(message);
         }
     }
 
     function storeSubmission(data) {
-        // Store in localStorage for backup
-        const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-        submissions.push(data);
-        localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-        
-        // Log to console for demonstration
-        console.log('New contact form submission:', data);
-        console.log('All submissions:', submissions);
-        
-        // Send to server (uncomment and update URL when you have a server)
-        sendToServer(data);
+        try {
+            // Store in localStorage for backup
+            const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+            submissions.push(data);
+            localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
+            
+            // Log to console for demonstration
+            console.log('New contact form submission:', data);
+            console.log('All submissions:', submissions);
+            
+            // Send to server (uncomment and update URL when you have a server)
+            sendToServer(data);
+        } catch (error) {
+            console.error('Error storing submission:', error);
+        }
     }
 
     function sendToServer(data) {
@@ -258,25 +245,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to view all submissions (for admin purposes)
     window.viewSubmissions = function() {
-        const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-        console.log('All contact form submissions:', submissions);
-        
-        if (submissions.length === 0) {
-            console.log('No submissions found.');
-            return;
+        try {
+            const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+            console.log('All contact form submissions:', submissions);
+            
+            if (submissions.length === 0) {
+                console.log('No submissions found.');
+                return;
+            }
+            
+            console.log(`Total submissions: ${submissions.length}`);
+            submissions.forEach((submission, index) => {
+                console.log(`\n--- Submission ${index + 1} ---`);
+                console.log(`Name: ${submission.fullName}`);
+                console.log(`Email: ${submission.email}`);
+                console.log(`Phone: ${submission.phone}`);
+                console.log(`Subject: ${submission.subject}`);
+                console.log(`Message: ${submission.message}`);
+                console.log(`Date: ${new Date(submission.timestamp).toLocaleString()}`);
+            });
+            
+            return submissions;
+        } catch (error) {
+            console.error('Error viewing submissions:', error);
+            return [];
         }
-        
-        console.log(`Total submissions: ${submissions.length}`);
-        submissions.forEach((submission, index) => {
-            console.log(`\n--- Submission ${index + 1} ---`);
-            console.log(`Name: ${submission.fullName}`);
-            console.log(`Email: ${submission.email}`);
-            console.log(`Phone: ${submission.phone}`);
-            console.log(`Subject: ${submission.subject}`);
-            console.log(`Message: ${submission.message}`);
-            console.log(`Date: ${new Date(submission.timestamp).toLocaleString()}`);
-        });
-        
-        return submissions;
     };
 });
+
+// circle skill
+const circles = document.querySelectorAll('.circle');
+circles.forEach(elem=>{
+    var dots = elem.getAttribute("data-dots");
+    var marked = elem.getAttribute("data-percent");
+    var percent = Math.floor(dots*marked/100);
+    var points = "";
+    var rotate = 360/dots;
+
+    for(let i=0; i<dots; i++)
+    {
+        points += `<div class="points" style="--i:${i}; --rot:${rotate}deg"></div>`;
+    }
+    elem.innerHTML = points;
+
+    const pointsMarked = elem.querySelectorAll('.points');
+    for(let i=0; i<percent; i++)
+    {
+        pointsMarked[i].classList.add('marked')
+    }
+})

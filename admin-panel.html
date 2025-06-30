@@ -196,11 +196,28 @@
         function updateStats() {
             const statsContainer = document.getElementById('stats');
             const totalSubmissions = submissions.length;
+            const today = new Date().toDateString();
+
             const todaySubmissions = submissions.filter(sub => {
-                const today = new Date().toDateString();
                 const submissionDate = new Date(sub.timestamp).toDateString();
                 return today === submissionDate;
             }).length;
+
+            const previousSubmissions = submissions.filter(sub => {
+                const submissionDate = new Date(sub.timestamp).toDateString();
+                return today !== submissionDate;
+            });
+
+            const previousSubmissionsCount = previousSubmissions.length;
+
+            // Find the latest previous submission date
+            let previousSubmissionDate = 'N/A';
+            if (previousSubmissionsCount > 0) {
+                const latestPrev = previousSubmissions.reduce((latest, sub) => {
+                    return (!latest || new Date(sub.timestamp) > new Date(latest.timestamp)) ? sub : latest;
+                }, null);
+                previousSubmissionDate = new Date(latestPrev.timestamp).toLocaleDateString();
+            }
 
             statsContainer.innerHTML = `
                 <div class="stat-card">
@@ -212,8 +229,16 @@
                     <div class="stat-label">Today's Submissions</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-number">${previousSubmissionsCount}</div>
+                    <div class="stat-label">Previous Submissions</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-number">${submissions.length > 0 ? new Date(submissions[submissions.length - 1].timestamp).toLocaleDateString() : 'N/A'}</div>
                     <div class="stat-label">Latest Submission</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${previousSubmissionDate}</div>
+                    <div class="stat-label">Previous Submission Date</div>
                 </div>
             `;
         }
